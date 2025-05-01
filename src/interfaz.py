@@ -685,6 +685,17 @@ class FinancialSimulatorApp(ctk.CTk):
                 self.vf_details_label.configure(
                     text=f"Aporte: Bs. {P:,.2f}/mes, Tasa: {r_annual*100:.2f}%, Plazo: {n_months} meses"
                 )
+
+            # Genero un vector de tiempos y valores de VF para graficar luego
+            n_years = n_months / 12
+            self.vf_times = np.linspace(0, n_years, 100)
+            if r_annual != 0:
+                self.vf_values = [P*12 * ((1+r_annual)**t - 1)/r_annual for t in self.vf_times]
+            else:
+                self.vf_values = [P*12*t for t in self.vf_times]
+            self.P = float(self.monthly_contrib_entry.get())         # Aporte mensual
+            self.r_annual = float(self.annual_rate_entry.get())/100  # Tasa anual en decimal
+            self.n_months = int(self.months_entry.get())    
             
             return FV
             
@@ -785,7 +796,15 @@ class FinancialSimulatorApp(ctk.CTk):
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(fill="both", expand=True)
-            
+
+            self.edo_times  = times
+            self.edo_values = A_values
+            self.edo_final  = final_A
+
+            self.K0 = float(self.i0_entry.get())
+            self.r = float(self.r_entry.get()) / 100
+            self.dt = float(dt)
+    
             return final_A, times, A_values, I_values, C_values
             
         except ValueError:
@@ -793,49 +812,55 @@ class FinancialSimulatorApp(ctk.CTk):
             return 0, [], [], [], []
         
     def generate_comparison(self):
-        # Calculate VF
-        vf_result = self.calculate_vf()
-        
-        # Simulate EDO
-        edo_result, times, A_values, _, _ = self.simulate_edo()
-        
-        # Generate comparison plot
-        for widget in self.plot_frame.winfo_children():
-            widget.destroy()
-        
-        # Create plot
+        # Asegurarse de tener datos
+        if not hasattr(self, 'vf_times') or not hasattr(self, 'edo_times'):
+            # Si aún no se calcularon, forzamos uno
+            self.calculate_vf()
+            self.simulate_edo()
+
+        # Limpiar plot anterior
+        for w in self.plot_frame.winfo_children():
+            w.destroy()
+
+        # Crear figura
         fig, ax = plt.subplots(figsize=(8, 5))
-        
-        # Plot EDO results
-        ax.plot(times, A_values, 'b-', label='Modelo Continuo (EDO)')
-        
-        # Plot VF results (assuming uniform growth)
-        n_years = self.vf_params['n_months'] / 12
-        vf_times = np.linspace(0, n_years, 100)
-        r = self.vf_params['r_annual']
-        P = self.vf_params['P']
-        
-        if r != 0:
-            vf_values = [P * 12 * ((1 + r)**(t) - 1) / r for t in vf_times]
-        else:
-            vf_values = [P * 12 * t for t in vf_times]
-        
-        ax.plot(vf_times, vf_values, 'r--', label='Anualidad Discreta (VF)')
-        
+
+        # Graficar EDO
+        ax.plot(self.edo_times, self.edo_values, label='Modelo Continuo (EDO)')
+
+        # Graficar VF discreto
+        ax.plot(self.vf_times, self.vf_values, '--', label='Anualidad Discreta (VF)')
+
         ax.set_xlabel('Tiempo (años)')
-        ax.set_ylabel('Valor Acumulado (Bs.)')
-        ax.set_title('Comparación de Modelos de Ahorro')
+        ax.set_ylabel('Valor acumulado (Bs.)')
+        ax.set_title('Comparativa de Modelos de Ahorro')
         ax.legend()
         ax.grid(True)
-        
-        # Show final values
-        ax.text(0.02, 0.95, f'VF final: Bs. {vf_result:,.2f}', transform=ax.transAxes)
-        ax.text(0.02, 0.90, f'EDO final: Bs. {edo_result:,.2f}', transform=ax.transAxes)
-        
-        # Embed plot
+
+        # Anotaciones de valor final
+        ax.text(0.02, 0.95, f'VF final: Bs. {self.vf_values[-1]:,.2f}', transform=ax.transAxes)
+        ax.text(0.02, 0.90, f'EDO final: Bs. {self.edo_final:,.2f}', transform=ax.transAxes)
+
+        # Insertar en el frame
         canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        # ——— ACTUALIZAR RESÚMENES ———
+        # Valor Futuro (discreto)
+        vf_final = self.vf_values[-1]
+        self.vf_summary_label.configure(text=f"Bs. {vf_final:,.2f}")
+        self.vf_details_label.configure(
+            text=f"Aporte: Bs. {self.P:,.2f}/mes, Tasa: {self.r_annual*100:.2f}%, Plazo: {self.n_months} meses"
+        )
+
+        # Modelo Continuo (EDO)
+        edo_final = self.edo_final
+        self.edo_summary_label.configure(text=f"Bs. {edo_final:,.2f}")
+        self.edo_details_label.configure(
+            text=f"Capital inicial: Bs. {self.K0:,.2f}, Tasa: {self.r*100:.2f}%, Δt: {self.dt}"
+        )
+
 
 if __name__ == "__main__":
     app = FinancialSimulatorApp()
