@@ -1,8 +1,5 @@
 import pandas as pd
 
-# ====================================================
-# Script 1: Generar y guardar el CSV de consumo mensual
-# ====================================================
 def generar_csv_consumo(path_csv: str = 'data/consumo_cochabamba.csv'):
     data = {
         'Categoría': [
@@ -20,9 +17,6 @@ def generar_csv_consumo(path_csv: str = 'data/consumo_cochabamba.csv'):
     df.to_csv(path_csv, index=False)
     print(f"CSV guardado en: {path_csv}")
 
-# ====================================================
-# Script 2: Leer CSV y calcular totales de gasto y ahorro
-# ====================================================
 def calcular_gastos_y_ahorro(path_csv: str = 'data/consumo_cochabamba.csv'):
     df = pd.read_csv(path_csv)
     # Mostrar la tabla
@@ -42,12 +36,6 @@ def calcular_gastos_y_ahorro(path_csv: str = 'data/consumo_cochabamba.csv'):
     print(f"Ahorro en escenario de gasto MÁXIMO: Bs. {ahorro_escenario_min_gasto}")
     print(f"Ahorro en escenario de gasto MÍNIMO: Bs. {ahorro_escenario_max_gasto}")
 
-# ====================================================
-# Ejecución de ambos scripts
-# ====================================================
 if __name__ == "__main__":
     generar_csv_consumo()
     calcular_gastos_y_ahorro()
-
-# Para ejecutar este código, guárdalo en un archivo .py y ejecútalo con:
-# python nombre_script.py
