@@ -2,11 +2,14 @@ import numpy as np
 
 # 1. Cálculo del Valor Futuro (VF) de una anualidad discreta con datos del PDF
 P = 161                     # Aporte mensual (Bs.)
-r_annual = 0.03             # Tasa anual
+r_annual = 0          # Tasa anual como 0.03 (3%)
 r_monthly = r_annual / 12   # Tasa mensual efectiva
 n_months = 120              # Número de meses (10 años)
 
-FV = P * ((1 + r_monthly)**n_months - 1) / r_monthly
+if r_monthly != 0:
+    FV = P * ((1 + r_monthly)**n_months - 1) / r_monthly
+else:
+    FV = P * n_months
 
 print(f"1) Valor Futuro (anualidad discreta): Bs. {FV:,.2f}")
 
@@ -22,7 +25,7 @@ g = 0.05       # Tasa de crecimiento de ingreso (anual)
 c0 = 50        # Consumo autónomo
 c1 = 0.9       # Propensión marginal al consumo
 c2 = 0.1       # Efecto ahorro en consumo
-r = 0.03       # Tasa de rendimiento (anual)
+r = 0      # Tasa de rendimiento (anual)
 A = 161        # Ahorro inicial
 t0 = 0         # Tiempo inicial (años)
 T = 10         # Tiempo final (años)
